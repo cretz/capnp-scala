@@ -28,5 +28,7 @@ case class PrimitiveListBuf(buf: ByteBuf, size: ListSize.Value) extends ListBuf 
   lazy val count = buf.readUInt29(35)
 }
 case class CompositeListBuf(buf: ByteBuf) extends ListBuf {
-  
+  lazy val size = buf.readUInt29(35) * 64L
+  lazy val pointable = Pointable(buf.slice(64))
+//  lazy val count = structBuf.dataStart
 }

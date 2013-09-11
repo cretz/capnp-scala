@@ -7,8 +7,12 @@ import scala.collection.mutable
 import scala.collection.immutable.BitSet
 
 // All offsets in bits
-class ByteBuf(buf: ByteBuffer) {
+class ByteBuf(val buf: ByteBuffer, val size: Long) {
+  assert(size % 8 == 0)
   buf.order(ByteOrder.LITTLE_ENDIAN)
+  
+  def this(size: Long) = this(ByteBuffer.allocate(size / 8 toInt), size)
+  def this(buf: ByteBuffer) = this(buf, (buf.capacity - buf.arrayOffset) * 8)
   
   def capacity = buf.capacity * 8L
   def arrayOffset = buf.arrayOffset * 8L
@@ -16,7 +20,7 @@ class ByteBuf(buf: ByteBuffer) {
   @inline
   def toBytes(bits: Long, mustBeAtByteBoundary: Boolean = true) = {
     if (mustBeAtByteBoundary) assert(bits % 8 == 0)
-    (bits / 8).toInt
+    bits / 8 toInt
   }
   
   def readBool(offset: Long) =
@@ -46,18 +50,6 @@ class ByteBuf(buf: ByteBuffer) {
     this
   }
   
-  def readInt30(offset: Long): Int = {
-    // Just read and zero out first 2 for now :-(
-    (BitSet.fromBitMask(Array(readInt32(offset - 2))) - 30 - 31).toBitMask.head.toInt
-  }
-  def writeInt30(offset: Long, v: Int) = {
-    // Write the full 32 bit, putting the two bool bits what they were
-    val b = mutable.BitSet.fromBitMask(Array(v))
-    b(30) = readBool(offset - 1)
-    b(31) = readBool(offset - 2)
-    writeInt32(offset - 2, b.toBitMask.head.toInt)
-  }
-  
   def readInt32(offset: Long) = buf.getInt(toBytes(offset))
   def writeInt32(offset: Long, v: Int) = {
     buf.putInt(toBytes(offset), v)
@@ -70,32 +62,6 @@ class ByteBuf(buf: ByteBuffer) {
     this
   }
   
-  def readUInt2(offset: Long): Byte = {
-    val b = mutable.BitSet(8)
-    b(0) = readBool(offset)
-    b(1) = readBool(offset + 1)
-    b.toBitMask.head.toByte
-  }
-  def writeUInt2(offset: Long, v: Byte) = { 
-    writeBool(offset, v == 1 || v == 3)
-    writeBool(offset + 1, v >= 2)
-    this
-  }
-  
-  def readUInt3(offset: Long): Byte = {
-    val b = mutable.BitSet(8)
-    b(0) = readBool(offset)
-    b(1) = readBool(offset + 1)
-    b(2) = readBool(offset + 2)
-    b.toBitMask.head.toByte
-  }
-  def writeUInt3(offset: Long, v: Byte) = { 
-    writeBool(offset, v % 2 == 1)
-    writeBool(offset + 1, v == 2 || v == 3 || v == 6 || v == 7)
-    writeBool(offset + 2, v >= 4)
-    this
-  }
-  
   def readUInt8(offset: Long) = (buf.get(toBytes(offset)) & 0xff).toShort
   def writeUInt8(offset: Long, v: Short) = {
     buf.put(toBytes(offset), (v & 0xff).toByte)
@@ -105,31 +71,6 @@ class ByteBuf(buf: ByteBuffer) {
   def readUInt16(offset: Long) = buf.getShort(toBytes(offset)) & 0xffff
   def writeUInt16(offset: Long, v: Int) = {
     buf.putShort(toBytes(offset), (v & 0xffff).toShort)
-    this
-  }
-  
-//  def readInt30(offset: Long): Int = {
-//    // Just read and zero out first 2 for now :-(
-//    (BitSet.fromBitMask(Array(readInt32(offset - 2))) - 30 - 31).toBitMask.head.toInt
-//  }
-//  def writeInt30(offset: Long, v: Int) = {
-//    // Write the full 32 bit, putting the two bool bits what they were
-//    val b = mutable.BitSet.fromBitMask(Array(v))
-//    b(30) = readBool(offset - 1)
-//    b(31) = readBool(offset - 2)
-//    writeInt32(offset - 2, b.toBitMask.head.toInt)
-//  }
-  
-  def readUInt29(offset: Long): Int = {
-    ((BitSet.fromBitMask(Array(readInt32(offset - 3))) -
-      29 - 30 - 31).toBitMask.head & 0xffffffffL).toInt
-  }
-  def writeUInt29(offset: Long, v: Int) = {
-    val b = mutable.BitSet.fromBitMask(Array(v & 0xffffffffL))
-    b(29) = readBool(offset - 1)
-    b(30) = readBool(offset - 2)
-    b(31) = readBool(offset - 3)
-    writeInt32(offset - 3, b.toBitMask.head.toInt)
     this
   }
   
@@ -160,8 +101,36 @@ class ByteBuf(buf: ByteBuffer) {
     this
   }
   
-  def slice(offset: Long) = {
+  def slice(offset: Long): ByteBuf = slice(offset, size - offset)
+  
+  def slice(offset: Long, size: Long) = {
     buf.position(toBytes(offset))
-    new ByteBuf(buf.slice())
+    new ByteBuf(buf.slice(), size)
+  }
+  
+  def rotr(b: Byte, c: Int) = (Integer.rotateRight(b, c) >> 24).toByte
+  
+  def toBinaryString() = {
+    buf.array.drop(buf.arrayOffset).foldLeft("") { (s, b) =>
+      s + ("%8s" format(Integer.toBinaryString(b & 0xff)) replace(' ', '0')) + ' '
+    }
+  }
+  
+  // Special
+  
+  def readFirstUInt2(offset: Long) = {
+    ((rotr(readInt8(offset), 2) & 0xff) >> 6).toByte
+  }
+  
+  def readFirstUInt3(offset: Long) = {
+    ((rotr(readInt8(offset), 3) & 0xff) >> 5).toByte
+  }
+  
+  def readLastUInt29(offset: Long) = {
+    (readInt32(offset) >>> 3) & 0xffffffffL
+  }
+  
+  def readLastInt30(offset: Long) = {
+    readInt32(offset) >>> 2
   }
 }

@@ -5,7 +5,12 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 class Message(val segments: Seq[ByteBuf]) {
-  lazy val root = StructBuf(segments.head)
+  lazy val rootBuf = StructBuf(segments.head)
+  
+  def root[T <: Struct](v: () => T): T = {
+    //v.apply(ByteBuffer.allocate(0))
+    v()
+  }
 }
 object Message {
   
@@ -17,7 +22,7 @@ object Message {
   }
   
   def readAll(bytes: Array[Byte], packed: Boolean): Message = {
-    if (packed) readAll(ByteBuffer.wrap(Unpacker.unpack(bytes.iterator).toArray))
+    if (packed) readAll(ByteBuffer.wrap(Packer.unpack(bytes.iterator).toArray))
     else readAll(ByteBuffer.wrap(bytes))
   }
   
@@ -26,7 +31,6 @@ object Message {
   // Eager
   def readAll(buf: ByteBuf): Message = {
     val segCount = buf.readUInt32(0) + 1
-    println(segCount)
     val start = (32 + (segCount * 32)) + ((32 + (segCount * 32)) % 64)
     val sizes = 0 until segCount.toInt map(i => buf.readUInt32(32 + (i * 32)))
     new Message(sizes.foldLeft((Seq.empty[ByteBuf], start)) { (m, n) =>

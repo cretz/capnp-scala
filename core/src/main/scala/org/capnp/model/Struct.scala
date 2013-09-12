@@ -2,26 +2,20 @@ package org.capnp.model
 
 import java.nio.ByteBuffer
 
-abstract class Struct(id: BigInt, dataWords: Int, pointerWords: Int) extends Pointable {
+abstract class Struct(id: BigInt, var dataBytes: Int, var pointerWords: Int) extends Pointable {
   
   private[model] var _buf: Option[ByteBuf] = None
   private[model] def buf_=(v: Option[ByteBuf]) { _buf = v }
   private[model] def buf = _buf.getOrElse {
-    val b = new ByteBuf(dataWords * 64L + pointerWords * 64L)
+    val b = new ByteBuf(dataBytes * 8L + pointerWords * 64L)
     _buf = Some(b)
     b
   }
   
   private[model] var seg: Option[Message#Segment] = None
   private var pointables = Map.empty[Int, Option[Pointable]]
-  
-//  private def pointable(index: Int) = pointables.getOrElse(index, {
-//    val p = seg map(_.getPtr(buf.slice(index * 64L + dataWords * 64L, 64)))
-//    pointables += index -> p
-//    p
-//  })
   private def ptrBuf(idx: Int) = {
-    buf.slice(idx * 64L + dataWords * 64L)
+    buf.slice(idx * 64L + dataBytes * 8L)
   }
   
   private def primSeq[T](ptr: Int, elemType: Type.Value): Seq[T] =
@@ -89,18 +83,22 @@ abstract class Struct(id: BigInt, dataWords: Int, pointerWords: Int) extends Poi
   protected def float64Seq(ptr: Int): Seq[Double] = primSeq[Double](ptr, Type.Float64)
   protected def float64Seq_=(ptr: Int, v: Seq[Double]) { primSeq_=(ptr, Type.Float64, v) }
   
-  protected def ptrField[T](ptr: Int): T = ???
-  protected def ptrField_=[T](ptr: Int, v: T): Unit = ???
+  protected def structField[T <: Struct](ptr: Int, obj: StructObject[T]): T = ???
+  protected def structField_=[T <: Struct](ptr: Int, v: T): Unit = ???
   
   protected def groupField[T <: Group](): T = ???
   protected def groupField_=[T <: Group](v: T): Unit = ???
   
-  protected def textField(ptr: Int): Option[String] = ???/*pointable(ptr) map {
-    case p: PrimitiveListBuf if p.size == ListSize.Byte => p.asString
-    case _ => ???
-  }*/
-  protected def textField_=(ptr: Int, v: Option[String]): Unit =
-    pointables += ptr -> v.map(TextPointable(_))
+  protected def textField(ptr: Int): String = 
+    pointables.getOrElse(ptr, {
+      val bytes = int8Seq(ptr)
+      require(bytes.last == 0, "Last byte in string is not 0")
+      val t = Some(TextPointable(new String(bytes.dropRight(1).toArray, "UTF-8")))
+      pointables += ptr -> t
+      t
+    }).get.asInstanceOf[TextPointable].str
+  protected def textField_=(ptr: Int, v: String): Unit =
+    pointables += ptr -> Some(TextPointable(v))
   
   protected def structSeq[T <: Struct](ptr: Int, obj: StructObject[T]): Seq[T] =
     pointables.getOrElse(ptr, {
@@ -121,7 +119,23 @@ abstract class Struct(id: BigInt, dataWords: Int, pointerWords: Int) extends Poi
   }
   protected def enumField_=(offset: Long, v: Enumeration#Value): Unit = 
     buf.writeUInt16(offset, v.id)
+  
+  protected def unionField[T <: Union](offset: Int, obj: UnionObject[T]): T = {
+    obj(buf.readUInt16(offset))
+  }
+  protected def unionField_=[T <: Union](offset: Int, obj: T): Unit = ???
+  
+  protected def dynField(offset: Int): DynObject = ???
+  protected def dynField_=(offset: Int, v: DynObject): Unit = ???
 }
 trait StructObject[T <: Struct] {
   def apply(): T
+  def apply(ptrBuf: ByteBuf, ptr: StructPtr): T = {
+    val s = apply()
+    s.buf = Some(ptrBuf.slice(64L + ptr.startWord * 64L))
+    s.dataBytes = ptr.dataWords / 8
+    s.pointerWords = ptr.ptrWords
+    s.seg = Some(ptr.seg)
+    s
+  }
 }

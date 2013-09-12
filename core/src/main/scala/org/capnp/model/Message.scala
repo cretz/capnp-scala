@@ -15,11 +15,7 @@ case class Message(segmentBufs: Seq[ByteBuf]) {
   case class Segment(buf: ByteBuf) {
     def getStruct[T <: Struct](ptrBuf: ByteBuf, obj: StructObject[T]): T =
       Ptr(this, ptrBuf) match {
-        case p: StructPtr =>
-          val s = obj()
-          s.buf = Some(ptrBuf.slice(64L + p.startWord * 64L))
-          s.seg = Some(this)
-          s
+        case p: StructPtr => obj(ptrBuf, p)
         case _ => throw new Exception("Invalid struct pointer")
       }
     
@@ -41,7 +37,7 @@ case class Message(segmentBufs: Seq[ByteBuf]) {
         case p: CompListPtr =>
           new CompositeSeq[T](
             this,
-            ptrBuf.slice(64L + p.tag.startWord * 64L),
+            ptrBuf.slice(64L + p.startWord * 64L),
             p.tag.startWord,
             p.tag.dataWords + p.tag.ptrWords,
             obj

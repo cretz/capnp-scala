@@ -3,7 +3,7 @@ package org.capnp.gen.schema
 import org.capnp.model
 import org.capnp.model._
 
-sealed abstract class Node extends Struct(0xe682ab4cf923a417L) {
+sealed abstract class Node extends Struct(0xe682ab4cf923a417L, 40, 5) with Union {
   def id = uint64Field(0)
   def id_=(v: BigInt) = uint64Field_=(0, v)
   
@@ -16,19 +16,29 @@ sealed abstract class Node extends Struct(0xe682ab4cf923a417L) {
   def scopeId = uint64Field(128)
   def scopeId_=(v: BigInt) = uint64Field_=(128, v)
   
-  def nestedNodes = seqField[Node.NestedNode](1)
-  def nestedNodes_=(v: Seq[Node.NestedNode]) = seqField_=(1, v)
+  def nestedNodes = structSeq[Node.NestedNode](1, Node.NestedNode)
+  def nestedNodes_=(v: Seq[Node.NestedNode]) = structSeq_=(1, v)
   
-  def annotations = seqField[Annotation](2)
-  def annotations_=(v: Seq[Annotation]) = seqField_=(2, v)
+  def annotations = structSeq[Annotation](2, Annotation)
+  def annotations_=(v: Seq[Annotation]) = structSeq_=(2, v)
 }
-object Node {
-  case class File extends Node with Union {
-    protected val tag = 0
+object Node extends AnonUnionObject[Node] {
+  protected val unionTagBitOffset = 96L
+  protected val cases = Map(
+    0 -> File,
+    1 -> Struct,
+    2 -> Enum,
+    3 -> Interface,
+    4 -> Const,
+    5 -> Annotation
+  )
+  
+  case class File() extends Node {
+    protected val unionTag = 0
   }
   
-  case class Struct extends Node with Union with Group {
-    protected val tag = 1
+  case class Struct() extends Node with Group {
+    protected val unionTag = 1
 
     def dataWordCount = uint16Field(112)
     def dataWordCount_=(v: Int) = uint16Field_=(112, v)
@@ -36,7 +46,7 @@ object Node {
     def pointerCount = uint16Field(192)
     def pointerCount_=(v: Int) = uint16Field_=(192, v)
     
-    def preferredListEncoding = enumField[ElementSize.Value](208)
+    def preferredListEncoding = enumField[ElementSize.Value](208, ElementSize.apply)
     def preferredListEncoding_=(v: ElementSize.Value) = enumField_=(208, v)
     
     def isGroup = boolField(224)
@@ -48,39 +58,39 @@ object Node {
     def discriminantOffset = uint32Field(256)
     def discriminantOffset_=(v: Long) = uint32Field_=(256, v)
     
-    def fields = seqField[Field](3)
-    def fields_=(v: Seq[Field]) = seqField_=(3, v)
+    def fields = structSeq[Field](3, Field)
+    def fields_=(v: Seq[Field]) = structSeq_=(3, v)
   }
   
-  case class Enum extends Node with Union with Group {
-    protected val tag = 2
+  case class Enum() extends Node with Group {
+    protected val unionTag = 2
     
-    def enumerants = seqField[Enumerant](3)
-    def enumerants_=(v: Seq[Enumerant]) = seqField_=(3, v)
+    def enumerants = structSeq[Enumerant](3, Enumerant)
+    def enumerants_=(v: Seq[Enumerant]) = structSeq_=(3, v)
   }
   
-  case class Interface extends Node with Union with Group {
-    protected val tag = 3
+  case class Interface() extends Node with Group {
+    protected val unionTag = 3
     
-    def methods = seqField[Method](3)
-    def methods_=(v: Seq[Method]) = seqField_=(3, v)
+    def methods = structSeq[Method](3, Method)
+    def methods_=(v: Seq[Method]) = structSeq_=(3, v)
   }
   
-  case class Const extends Node with Union with Group {
-    protected val tag = 4
+  case class Const() extends Node with Group {
+    protected val unionTag = 4
     
-    def `type` = ptrField[Type](3)
-    def type_=(v: Type) = ptrField_=(3, v)
+    def `type` = structField[Type](3, Type)
+    def type_=(v: Type) = structField_=(3, v)
     
-    def value = ptrField[Value](4)
-    def value_=(v: Type) = ptrField_=(4, v)
+    def value = structField[Value](4, Value)
+    def value_=(v: Type) = structField_=(4, v)
   }
   
-  case class Annotation extends Node with Union with Group {
-    protected val tag = 5
+  case class Annotation() extends Node with Group {
+    protected val unionTag = 5
     
-    def `type` = ptrField[Type](3)
-    def type_=(v: Type) = ptrField_=(3, v)
+    def `type` = structField[Type](3, Type)
+    def type_=(v: Type) = structField_=(3, v)
     
     def targetsFile = boolField(112)
     def targetsFile_=(v: Boolean) = boolField_=(112, v)
@@ -119,11 +129,12 @@ object Node {
     def targetsAnnotation_=(v: Boolean) = boolField_=(123, v)   
   }
   
-  case class NestedNode extends model.Struct(0x9aad50a41f4af45fL) {
+  case class NestedNode() extends model.Struct(0x9aad50a41f4af45fL, 8, 1) {
     def name = textField(0)
     def name_=(v: String) = textField_=(0, v)
     
     def id = uint64Field(0)
     def id_=(v: BigInt) = uint64Field_=(0, v)
   }
+  object NestedNode extends StructObject[NestedNode]
 }

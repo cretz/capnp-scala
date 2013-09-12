@@ -11,6 +11,8 @@ class AddressBookSpec extends Specification {
     "read normal model properly" in {
       val m = Message.readAll(getClass.getResourceAsStream("../addressbook.capnp.bin"), true)
       val a = m.root(AddressBook)
+      println(a)
+      println(a.people)
       a.people.size mustEqual 2
       1 mustEqual 1
     }

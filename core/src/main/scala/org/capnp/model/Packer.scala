@@ -15,6 +15,6 @@ object Packer {
         val s = BitSet.fromBitMask(Array(b))
         0 until 8 map(i => if (s(i)) nextByte.get else 0x00.toByte)
     }
-    (Iterator continually(unpackTag) takeWhile(_.isDefined) flatten) flatten
+    ((Iterator continually(unpackTag) takeWhile(_.isDefined)).flatten).flatten
   }
 }

@@ -11,7 +11,7 @@ class ByteBuf(val buf: ByteBuffer, val size: Long) {
   assert(size % 8 == 0)
   buf.order(ByteOrder.LITTLE_ENDIAN)
   
-  def this(size: Long) = this(ByteBuffer.allocate(size / 8 toInt), size)
+  def this(size: Long) = this(ByteBuffer.allocate((size / 8).toInt), size)
   def this(buf: ByteBuffer) = this(buf, (buf.capacity - buf.arrayOffset) * 8)
   
   def capacity = buf.capacity * 8L
@@ -20,7 +20,7 @@ class ByteBuf(val buf: ByteBuffer, val size: Long) {
   @inline
   def toBytes(bits: Long, mustBeAtByteBoundary: Boolean = true) = {
     if (mustBeAtByteBoundary) assert(bits % 8 == 0)
-    bits / 8 toInt
+    (bits / 8).toInt
   }
   
   def readBool(offset: Long) =

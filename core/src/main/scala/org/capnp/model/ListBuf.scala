@@ -31,7 +31,7 @@ case class PrimitiveListBuf(buf: ByteBuf, size: ListSize.Value) extends ListBuf 
     // Get all bytes
     val bytes = 0L until count map(i => buf.readInt8(firstElementOffset + i * 8))
     require(bytes.last == 0)
-    new String(bytes dropRight(1) toArray, "UTF-8")
+    new String(bytes.dropRight(1).toArray, "UTF-8")
   }
 }
 object PrimitiveListBuf {

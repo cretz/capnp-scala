@@ -12,7 +12,7 @@ abstract class Struct(id: BigInt, var dataBytes: Int, var pointerWords: Int) ext
     b
   }
   
-  private[model] var seg: Option[Message#Segment] = None
+  private[model] var msg: Option[Message] = None
   private var pointables = Map.empty[Int, Option[Pointable]]
   private def ptrBuf(idx: Int) = {
     buf.slice(idx * 64L + dataBytes * 8L)
@@ -20,7 +20,7 @@ abstract class Struct(id: BigInt, var dataBytes: Int, var pointerWords: Int) ext
   
   private def primSeq[T](ptr: Int, elemType: Type.Value): Seq[T] =
     pointables.getOrElse(ptr, {
-      val s = seg.map(_.getPrimSeq(ptrBuf(ptr), elemType))
+      val s = msg.map(_.getPrimSeq(ptrBuf(ptr), elemType))
       pointables += ptr -> s
       Some(s.getOrElse(Seq.empty[T]))
     }).get.asInstanceOf[Seq[T]]
@@ -83,8 +83,8 @@ abstract class Struct(id: BigInt, var dataBytes: Int, var pointerWords: Int) ext
   protected def float64Seq(ptr: Int): Seq[Double] = primSeq[Double](ptr, Type.Float64)
   protected def float64Seq_=(ptr: Int, v: Seq[Double]) { primSeq_=(ptr, Type.Float64, v) }
   
-  protected def structField[T <: Struct](ptr: Int, obj: StructObject[T]): T = ???
-  protected def structField_=[T <: Struct](ptr: Int, v: T): Unit = ???
+  protected def structField[T <: Struct](ptr: Int, obj: StructObject[T]): Option[T] = ???
+  protected def structField_=[T <: Struct](ptr: Int, v: Option[T]): Unit = ???
   
   protected def groupField[T <: Group](): T = ???
   protected def groupField_=[T <: Group](v: T): Unit = ???
@@ -102,7 +102,7 @@ abstract class Struct(id: BigInt, var dataBytes: Int, var pointerWords: Int) ext
   
   protected def structSeq[T <: Struct](ptr: Int, obj: StructObject[T]): Seq[T] =
     pointables.getOrElse(ptr, {
-      val s = seg.map(_.getCompSeq(ptrBuf(ptr), obj))
+      val s = msg.map(_.getCompSeq(ptrBuf(ptr), obj))
       pointables += ptr -> s
       Some(s.getOrElse(Seq.empty[T]))
     }).get.asInstanceOf[Seq[T]]
@@ -130,12 +130,12 @@ abstract class Struct(id: BigInt, var dataBytes: Int, var pointerWords: Int) ext
 }
 trait StructObject[T <: Struct] {
   def apply(): T
-  def apply(ptrBuf: ByteBuf, ptr: StructPtr): T = {
+  def apply(msg: Option[Message], ptr: StructPtr): T = {
     val s = apply()
-    s.buf = Some(ptrBuf.slice(64L + ptr.startWord * 64L))
-    s.dataBytes = ptr.dataWords / 8
+    s.buf = Some(ptr.buf.slice(64L + ptr.startWord * 64L))
+    s.dataBytes = ptr.dataWords * 8
     s.pointerWords = ptr.ptrWords
-    s.seg = Some(ptr.seg)
+    s.msg = msg
     s
   }
 }

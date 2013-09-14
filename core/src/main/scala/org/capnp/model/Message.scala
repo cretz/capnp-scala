@@ -5,45 +5,48 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 // TODO: build streamable
-case class Message(segmentBufs: Seq[ByteBuf]) {
-  val segments = segmentBufs map(Segment(_))
-  lazy val rootBuf = StructBuf(segmentBufs.head)
+case class Message(segments: Seq[ByteBuf]) {
+  lazy val rootBuf = StructBuf(segments.head)
   
-  def root[T <: Struct](obj: StructObject[T]): T =
-    segments.head.getStruct(segments.head.buf, obj)
+  def root[T <: Struct](obj: StructObject[T]): Option[T] = getStruct(segments.head, obj)
   
-  case class Segment(buf: ByteBuf) {
-    def getStruct[T <: Struct](ptrBuf: ByteBuf, obj: StructObject[T]): T =
-      Ptr(this, ptrBuf) match {
-        case p: StructPtr => obj(ptrBuf, p)
-        case _ => throw new Exception("Invalid struct pointer")
-      }
-    
-    def getPrimSeq[T](ptrBuf: ByteBuf, elemType: Type.Value): PrimitiveSeq[T] =
-      Ptr(this, ptrBuf) match {
-        case p: PrimListPtr =>
-          new PrimitiveSeq[T](
-            this,
-            ptrBuf.slice(64L + p.startWord * 64L),
-            p.count,
-            p.elemSizeType,
-            elemType
-          )
-        case _ => throw new Exception("Invalid list pointer")
-      }
-    
-    def getCompSeq[T <: Struct](ptrBuf: ByteBuf, obj: StructObject[T]): CompositeSeq[T] =
-      Ptr(this, ptrBuf) match {
-        case p: CompListPtr =>
-          new CompositeSeq[T](
-            this,
-            ptrBuf.slice(64L + p.startWord * 64L),
-            p.tag.startWord,
-            p.tag.dataWords + p.tag.ptrWords,
-            obj
-          )
-        case _ => throw new Exception("Invalid list pointer")
-      }
+  // This follows far pointers
+  def getPtr(ptrBuf: ByteBuf): Ptr = Ptr(ptrBuf) match {
+    case p: FarPtr => getPtr(segments(p.segId).slice(p.segOffsetWords * 64L))
+    case p => p
+  }
+
+  def getStruct[T <: Struct](ptrBuf: ByteBuf, obj: StructObject[T]): Option[T] = getPtr(ptrBuf) match {
+    case p: StructPtr => Some(obj(Some(this), p))
+    case _: NullPtr => None
+    case _ => throw new Exception("Invalid struct pointer")
+  }
+  
+  def getPrimSeq[T](ptrBuf: ByteBuf, elemType: Type.Value): PointableSeq[T] = getPtr(ptrBuf) match {
+    case p: PrimListPtr =>
+      new PrimitiveSeq[T](
+        this,
+        p.buf.slice(64L + p.startWord * 64L),
+        p.count,
+        p.elemSizeType,
+        elemType
+      )
+    case _: NullPtr => PointableSeq.empty[T]
+    case _ => throw new Exception("Invalid list pointer")
+  }
+  
+  def getCompSeq[T <: Struct](ptrBuf: ByteBuf, obj: StructObject[T]): PointableSeq[T] = getPtr(ptrBuf) match {
+    case p: CompListPtr =>
+      new CompositeSeq[T](
+        this,
+        p.buf.slice(64L + p.startWord * 64L),
+        p.tag.startWord,
+        p.tag.dataWords,
+        p.tag.ptrWords,
+        obj
+      )
+    case _: NullPtr => PointableSeq.empty[T]
+    case _ => throw new Exception("Invalid list pointer")
   }
 }
 object Message {

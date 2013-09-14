@@ -80,17 +80,17 @@ object Node extends AnonUnionObject[Node] {
     protected val unionTag = 4
     
     def `type` = structField[Type](3, Type)
-    def type_=(v: Type) = structField_=(3, v)
+    def type_=(v: Option[Type]) = structField_=(3, v)
     
     def value = structField[Value](4, Value)
-    def value_=(v: Type) = structField_=(4, v)
+    def value_=(v: Option[Type]) = structField_=(4, v)
   }
   
   case class Annotation() extends Node with Group {
     protected val unionTag = 5
     
     def `type` = structField[Type](3, Type)
-    def type_=(v: Type) = structField_=(3, v)
+    def type_=(v: Option[Type]) = structField_=(3, v)
     
     def targetsFile = boolField(112)
     def targetsFile_=(v: Boolean) = boolField_=(112, v)

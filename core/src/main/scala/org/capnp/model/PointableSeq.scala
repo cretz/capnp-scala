@@ -13,6 +13,8 @@ abstract class PointableSeq[T] extends IndexedSeq[T]
 
 object PointableSeq {
   def apply[T](vals: T*) = fromSeq(vals)
+  
+  def empty[T]: PointableSeq[T] = apply[T]()
  
   def fromSeq[T](seq: Seq[T]) = new LiteralPointableSeq[T](seq)
  
@@ -33,7 +35,7 @@ class LiteralPointableSeq[T] private[model] (vals: Seq[T]) extends PointableSeq[
 }
 
 class PrimitiveSeq[T] private[model] (
-    seg: Message#Segment, buf: ByteBuf, count: Int, elemSizeType: Byte, elemType: Type.Value)
+    msg: Message, buf: ByteBuf, count: Int, elemSizeType: Byte, elemType: Type.Value)
     extends PointableSeq[T] {
  
   lazy val stepBits = elemSizeType match {
@@ -71,15 +73,15 @@ class PrimitiveSeq[T] private[model] (
 }
 
 class CompositeSeq[T <: Struct] private[model] (
-    seg: Message#Segment, buf: ByteBuf, count: Int, stepWords: Int, obj: StructObject[T])
+    msg: Message, buf: ByteBuf, count: Int, dataWords: Int, ptrWords: Int, obj: StructObject[T])
     extends PointableSeq[T] {
+  
+  val stepWords = dataWords + ptrWords
  
   def apply(idx: Int): T = {
     if (idx < 0 || count <= idx) throw new IndexOutOfBoundsException
-    val s = obj()
-    s.buf = Some(buf.slice(idx * (stepWords * 64L)))
-    s.seg = Some(seg)
-    s
+    // Have to have -1 start word, because it doesn't really have a pointer
+    obj(Some(msg), StructPtr(buf.slice(idx * (stepWords * 64L)), -1, dataWords, ptrWords))
   }
  
   def length = count

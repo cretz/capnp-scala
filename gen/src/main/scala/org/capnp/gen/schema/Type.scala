@@ -87,7 +87,7 @@ object Type extends AnonUnionObject[Type] {
     protected val unionTag = 14
     
     def elementType = structField[Type](0, Type)
-    def elementType_=(v: Type) = structField_=(0, v)
+    def elementType_=(v: Option[Type]) = structField_=(0, v)
   }
   
   case class Enum() extends Type with Group {

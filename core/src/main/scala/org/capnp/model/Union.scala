@@ -13,12 +13,12 @@ trait AnonUnionObject[T <: Struct with Union] extends UnionObject[T] with Struct
   
   def apply(): T = ???
   
-  override def apply(ptrBuf: ByteBuf, ptr: StructPtr): T = {
-    val s = apply(ptrBuf.readUInt16(64L + ptr.startWord * 64L + unionTagBitOffset))
-    s.buf = Some(ptrBuf.slice(64L + ptr.startWord * 64L))
-    s.dataBytes = ptr.dataWords / 8
+  override def apply(msg: Option[Message], ptr: StructPtr): T = {
+    val s = apply(ptr.buf.readUInt16(64L + ptr.startWord * 64L + unionTagBitOffset))
+    s.buf = Some(ptr.buf.slice(64L + ptr.startWord * 64L))
+    s.dataBytes = ptr.dataWords * 8
     s.pointerWords = ptr.ptrWords
-    s.seg = Some(ptr.seg)
+    s.msg = msg
     s
   }
 } 

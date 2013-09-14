@@ -52,10 +52,10 @@ object Field extends AnonUnionObject[Field] {
     def offset_=(v: Long) = uint32Field_=(32, v)
   
     def `type` = structField[Type](2, Type)
-    def type_=(v: Type) = structField_=(2, v)
+    def type_=(v: Option[Type]) = structField_=(2, v)
   
     def `value` = structField[Value](3, Value)
-    def value_=(v: Value) = structField_=(3, v)
+    def value_=(v: Option[Value]) = structField_=(3, v)
   }
   
   case class Group() extends Field with model.Group {

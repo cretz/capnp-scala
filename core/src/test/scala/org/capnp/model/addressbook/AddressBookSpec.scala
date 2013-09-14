@@ -37,7 +37,7 @@ class AddressBookSpec extends Specification {
        * }
        */
       val m = Message.readAll(getClass.getResourceAsStream("../addressbook.capnp.bin"), true)
-      val book = m.root(AddressBook)
+      val book = m.root(AddressBook).get
       book.people.size mustEqual 2
       val alice = book.people.head
       alice.id mustEqual 123

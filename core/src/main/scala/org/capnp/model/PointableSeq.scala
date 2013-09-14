@@ -2,21 +2,23 @@ package org.capnp.model
 
 import scala.collection.IndexedSeq
 import scala.collection.IndexedSeqLike
-import scala.collection.mutable.Builder
-import scala.collection.immutable.VectorBuilder
 import scala.collection.generic.CanBuildFrom
+import scala.collection.immutable.VectorBuilder
+import scala.collection.mutable.Builder
 
-abstract class PointableSeq[T] extends IndexedSeq[T]
-    with IndexedSeqLike[T, PointableSeq[T]] with Pointable {
+abstract class PointableSeq[T]
+    extends IndexedSeq[T]
+    with IndexedSeqLike[T, PointableSeq[T]]
+    with Pointable {
   override protected[this] def newBuilder: Builder[T, PointableSeq[T]] = PointableSeq.newBuilder
 }
 
 object PointableSeq {
-  def apply[T](vals: T*) = fromSeq(vals)
+  def apply[T](vals: T*): PointableSeq[T] = fromSeq(vals)
   
   def empty[T]: PointableSeq[T] = apply[T]()
  
-  def fromSeq[T](seq: Seq[T]) = new LiteralPointableSeq[T](seq)
+  def fromSeq[T](seq: Seq[T]): PointableSeq[T] = new LiteralPointableSeq[T](seq)
  
   def newBuilder[T]: Builder[T, PointableSeq[T]] =
     new VectorBuilder mapResult fromSeq
@@ -31,13 +33,16 @@ object PointableSeq {
 class LiteralPointableSeq[T] private[model] (vals: Seq[T]) extends PointableSeq[T] {
   def apply(idx: Int): T = vals(idx)
  
-  def length = vals.length
+  def length: Int = vals.length
 }
 
 class PrimitiveSeq[T] private[model] (
-    msg: Message, buf: ByteBuf, count: Int, elemSizeType: Byte, elemType: Type.Value)
+    msg: Message,
+    buf: ByteBuf,
+    count: Int,
+    elemSizeType: Byte,
+    elemType: Type.Value)
     extends PointableSeq[T] {
- 
   lazy val stepBits = elemSizeType match {
     case 0 => 0
     case 1 => 1
@@ -69,13 +74,16 @@ class PrimitiveSeq[T] private[model] (
     readFunc(idx * stepBits).asInstanceOf[T]
   }
  
-  def length = count
+  def length: Int = count
 }
 
 class CompositeSeq[T <: Struct] private[model] (
-    msg: Message, buf: ByteBuf, count: Int, dataWords: Int, ptrWords: Int, obj: StructObject[T])
+    msg: Message,
+    buf: ByteBuf,
+    count: Int,
+    dataWords: Int,
+    ptrWords: Int, obj: StructObject[T])
     extends PointableSeq[T] {
-  
   val stepWords = dataWords + ptrWords
  
   def apply(idx: Int): T = {
@@ -84,5 +92,5 @@ class CompositeSeq[T <: Struct] private[model] (
     obj(Some(msg), StructPtr(buf.slice(idx * (stepWords * 64L)), -1, dataWords, ptrWords))
   }
  
-  def length = count
+  def length: Int = count
 }

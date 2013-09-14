@@ -136,5 +136,6 @@ object Node extends AnonUnionObject[Node] {
     def id = uint64Field(0)
     def id_=(v: BigInt) = uint64Field_=(0, v)
   }
+  
   object NestedNode extends StructObject[NestedNode]
 }

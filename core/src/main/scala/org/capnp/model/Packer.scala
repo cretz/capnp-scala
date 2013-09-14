@@ -1,9 +1,10 @@
 package org.capnp.model
 
 import scala.collection.immutable.BitSet
-import scala.collection.mutable.ListBuffer
 
 object Packer {
+  def pack(bytes: Iterator[Byte]): Iterator[Byte] = ???
+  
   def unpack(bytes: Iterator[Byte]): Iterator[Byte] = {
     def nextByte = if (bytes.hasNext) Some(bytes.next) else None
     def nextVal = nextByte map(_ & 0xff)

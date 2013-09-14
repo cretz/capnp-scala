@@ -3,6 +3,7 @@ package org.capnp.gen.schema
 import org.capnp.model._
 
 sealed abstract class Value extends Struct(0xce23dcd2d7b00c9bL, 16, 1) with Union
+
 object Value extends AnonUnionObject[Value] {
   protected val unionTagBitOffset = 0L
   protected val cases = Map(
@@ -126,7 +127,7 @@ object Value extends AnonUnionObject[Value] {
     protected val unionTag = 14
     
     def value = dynField(0)
-    def value_=(v: DynObject) = dynField_=(0, v)
+    def value_=(v: Option[DynObject]) = dynField_=(0, v)
   }
   
   case class Enum() extends Value {
@@ -140,7 +141,7 @@ object Value extends AnonUnionObject[Value] {
     protected val unionTag = 16
     
     def value = dynField(0)
-    def value_=(v: DynObject) = dynField_=(0, v)
+    def value_=(v: Option[DynObject]) = dynField_=(0, v)
   }
   
   case class Interface() extends Value {
@@ -151,6 +152,6 @@ object Value extends AnonUnionObject[Value] {
     protected val unionTag = 18
     
     def value = dynField(0)
-    def value_=(v: DynObject) = dynField_=(0, v)
+    def value_=(v: Option[DynObject]) = dynField_=(0, v)
   }
 }

@@ -9,4 +9,5 @@ case class Annotation() extends Struct(0xf1c8950dab257542L, 8, 1) {
   def value = structField[Value](0, Value)
   def value_=(v: Option[Value]) = structField_=(0, v)
 }
+
 object Annotation extends StructObject[Annotation]

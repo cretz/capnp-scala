@@ -1,5 +1,5 @@
 package org.capnp.model
 
-class DynObject extends Pointable {
-
+case class DynObject(ptr: Ptr) extends Pointable {
+  // TODO: Make turning into list/struct/interface/etc easier
 }

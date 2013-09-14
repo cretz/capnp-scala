@@ -16,10 +16,11 @@ sealed abstract class Field extends Struct(0x9aad50a41f4af45fL, 24, 4) with Unio
   def discriminantValue = uint16Field(16)
   def discriminantValue_=(v: Int) = uint16Field_=(16, v)
   
-  def ordinal = groupField[Ordinal]
-  def ordinal_=(v: Ordinal) = groupField_=(v)
+  def ordinal = unionField(80, Ordinal)
+  def ordinal_=(v: Ordinal) = unionField_=(80, v)
   
   sealed abstract class Ordinal extends Union with Group
+  
   object Ordinal extends UnionObject[Ordinal] {
     protected val cases = Map(
       0 -> Implicit,
@@ -38,6 +39,7 @@ sealed abstract class Field extends Struct(0x9aad50a41f4af45fL, 24, 4) with Unio
     }
   }
 }
+
 object Field extends AnonUnionObject[Field] {
   protected val unionTagBitOffset = 64L
   protected val cases = Map(

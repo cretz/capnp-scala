@@ -3,6 +3,7 @@ package org.capnp.gen.schema
 import org.capnp.model._
 
 sealed abstract class Type extends Struct(0xd07378ede1f9cc60L, 16, 1) with Union
+
 object Type extends AnonUnionObject[Type] {
   protected val unionTagBitOffset = 0L
   protected val cases = Map(

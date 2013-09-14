@@ -2,18 +2,20 @@ package org.capnp.model
 
 import java.io.InputStream
 import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 // TODO: build streamable
 case class Message(segments: Seq[ByteBuf]) {
-  lazy val rootBuf = StructBuf(segments.head)
-  
   def root[T <: Struct](obj: StructObject[T]): Option[T] = getStruct(segments.head, obj)
   
   // This follows far pointers
   def getPtr(ptrBuf: ByteBuf): Ptr = Ptr(ptrBuf) match {
     case p: FarPtr => getPtr(segments(p.segId).slice(p.segOffsetWords * 64L))
     case p => p
+  }
+  
+  def getDynObject(ptrBuf: ByteBuf): Option[DynObject] = getPtr(ptrBuf) match {
+    case _: NullPtr => None
+    case p => Some(DynObject(p))
   }
 
   def getStruct[T <: Struct](ptrBuf: ByteBuf, obj: StructObject[T]): Option[T] = getPtr(ptrBuf) match {
@@ -49,19 +51,18 @@ case class Message(segments: Seq[ByteBuf]) {
     case _ => throw new Exception("Invalid list pointer")
   }
 }
+
 object Message {
   
-  def readAll(s: InputStream, packed: Boolean = false): Message = {
+  def readAll(s: InputStream, packed: Boolean = false): Message =
     // TODO: very blocking and only one byte at a time :-(
     readAll(
       (Iterator continually(s.read) takeWhile(_ != -1) map(_.toByte)).toArray, packed
     )
-  }
   
-  def readAll(bytes: Array[Byte], packed: Boolean): Message = {
+  def readAll(bytes: Array[Byte], packed: Boolean): Message =
     if (packed) readAll(ByteBuffer.wrap(Packer.unpack(bytes.iterator).toArray))
     else readAll(ByteBuffer.wrap(bytes))
-  }
   
   def readAll(buf: ByteBuffer): Message = readAll(new ByteBuf(buf))
   

@@ -3,6 +3,7 @@ package org.capnp.model
 sealed trait Ptr {
   val buf: ByteBuf
 }
+
 object Ptr {
   def apply(buf: ByteBuf): Ptr = buf.readFirstUInt2(0) match {
     case 0 => StructPtr(buf) match {
@@ -17,6 +18,7 @@ object Ptr {
 case class NullPtr(buf: ByteBuf) extends Ptr
 
 case class StructPtr(buf: ByteBuf, startWord: Int, dataWords: Int, ptrWords: Int) extends Ptr
+
 object StructPtr {
   def apply(buf: ByteBuf): StructPtr = StructPtr(
     buf,
@@ -27,6 +29,7 @@ object StructPtr {
 }
 
 sealed trait ListPtr extends Ptr
+
 object ListPtr {
   def apply(buf: ByteBuf): ListPtr = buf.readFirstUInt3(32) match {
     case 7 => CompListPtr(buf)
@@ -35,8 +38,10 @@ object ListPtr {
 }
 
 case class PrimListPtr(buf: ByteBuf, startWord: Int, elemSizeType: Byte, count: Int) extends ListPtr
+
 object PrimListPtr {
   def apply(buf: ByteBuf): PrimListPtr = apply(buf.readFirstUInt3(32), buf)
+
   def apply(elemType: Byte, buf: ByteBuf): PrimListPtr = PrimListPtr(
     buf,
     buf.readLastInt30(0),
@@ -46,6 +51,7 @@ object PrimListPtr {
 }
 
 case class CompListPtr(buf: ByteBuf, startWord: Int, words: Long, tag: StructPtr) extends ListPtr
+
 object CompListPtr {
   def apply(buf: ByteBuf): CompListPtr = {
     val startWord = buf.readLastInt30(0)
@@ -60,6 +66,7 @@ object CompListPtr {
 }
 
 case class FarPtr(buf: ByteBuf, twoWordLanding: Boolean, segOffsetWords: Long, segId: Int) extends Ptr
+
 object FarPtr {
   def apply(buf: ByteBuf): FarPtr = {
     FarPtr(

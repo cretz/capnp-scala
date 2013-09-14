@@ -21,6 +21,7 @@ case class Method() extends Struct(0x9500cce23b334d80L, 8, 4) {
   def annotations = structSeq[Annotation](3, Annotation)
   def annotations_=(v: Seq[Annotation]) = structSeq_=(3, v)
 }
+
 object Method extends StructObject[Method] {
   case class Param() extends Struct(0xcbc0c86dae91fcf6L, 0, 4) {
     def name = textField(0)
@@ -35,5 +36,6 @@ object Method extends StructObject[Method] {
     def annotations = structSeq[Annotation](3, Annotation)
     def annotations_=(v: Seq[Annotation]) = structSeq_=(3, v)
   }
+
   object Param extends StructObject[Param]
 }

@@ -1,8 +1,8 @@
 package org.capnp.model.addressbook
 
+import org.capnp.model.Group
 import org.capnp.model.Struct
 import org.capnp.model.StructObject
-import org.capnp.model.Group
 import org.capnp.model.Union
 import org.capnp.model.UnionObject
 
@@ -23,6 +23,7 @@ case class Person() extends Struct(0x98808e9832e8bc18L, 8, 4) {
   def employment_=(v: Employment) = unionField_=(32, v)
   
   sealed abstract class Employment extends Group with Union
+
   object Employment extends UnionObject[Employment] {
     protected lazy val cases = Map(
       0 -> Unemployed,
@@ -54,6 +55,7 @@ case class Person() extends Struct(0x98808e9832e8bc18L, 8, 4) {
     }
   }
 }
+
 object Person extends StructObject[Person] {
   case class PhoneNumber() extends Struct(0x814e90b29c9e8ad0L, 8, 1) {
     def number = textField(0)
@@ -62,6 +64,7 @@ object Person extends StructObject[Person] {
     def `type` = enumField(0, PhoneNumber.Type.apply)
     def type_=(v: PhoneNumber.Type.Value) = enumField_=(0, v)
   }
+
   object PhoneNumber extends StructObject[PhoneNumber] {
     object Type extends Enumeration {
       val mobile = Value(0)

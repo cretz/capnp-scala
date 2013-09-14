@@ -12,4 +12,5 @@ case class Enumerant() extends Struct(0x978a7cebdc549a4dL, 8, 2) {
   def annotations = structSeq[Annotation](1, Annotation)
   def annotations_=(v: Seq[Annotation]) = structSeq_=(1, v)
 }
+
 object Enumerant extends StructObject[Enumerant]

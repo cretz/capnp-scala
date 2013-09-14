@@ -3,11 +3,13 @@ package org.capnp.model
 trait Union {
   protected def unionTag: Int
 }
+
 trait UnionObject[T <: Union] {
   protected def cases: Map[Int, () => T]
   
   def apply(tag: Int): T = cases(tag)()
 }
+
 trait AnonUnionObject[T <: Struct with Union] extends UnionObject[T] with StructObject[T] {
   protected def unionTagBitOffset: Long
   

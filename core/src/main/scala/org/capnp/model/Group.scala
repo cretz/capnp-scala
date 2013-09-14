@@ -1,5 +1,3 @@
 package org.capnp.model
 
-trait Group {
-
-}
+trait Group

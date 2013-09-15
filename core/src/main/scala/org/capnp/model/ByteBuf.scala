@@ -3,22 +3,20 @@ package org.capnp.model
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-// All offsets in bits
-class ByteBuf(val buf: ByteBuffer, val size: Long) {
+// All offsets/sizes are in bits
+class ByteBuf(private val buf: ByteBuffer, val start: Long, val size: Long) {
+  assert(start % 8 == 0)
   assert(size % 8 == 0)
   buf.order(ByteOrder.LITTLE_ENDIAN)
   
-  def this(size: Long) = this(ByteBuffer.allocate((size / 8).toInt), size)
+  def this(size: Long) = this(ByteBuffer.allocate((size / 8).toInt), 0, size)
   
-  def this(buf: ByteBuffer) = this(buf, (buf.capacity - buf.arrayOffset) * 8)
-  
-  def capacity = buf.capacity * 8L
-  
-  def arrayOffset = buf.arrayOffset * 8L
+  def this(buf: ByteBuffer) = this(buf, 0, buf.limit * 8L)
   
   def toBytes(bits: Long, mustBeAtByteBoundary: Boolean = true): Int = {
     if (mustBeAtByteBoundary) assert(bits % 8 == 0)
-    (bits / 8).toInt
+    if (bits >= size) throw new IndexOutOfBoundsException
+    (start / 8 + bits / 8).toInt
   }
   
   def readBool(offset: Long): Boolean =
@@ -110,10 +108,8 @@ class ByteBuf(val buf: ByteBuffer, val size: Long) {
   
   def slice(offset: Long): ByteBuf = slice(offset, size - offset)
   
-  def slice(offset: Long, size: Long): ByteBuf = {
-    buf.position(toBytes(offset))
-    new ByteBuf(buf.slice(), size)
-  }
+  def slice(offset: Long, size: Long): ByteBuf =
+    new ByteBuf(buf.duplicate(), start + offset, size)
   
   def rotr(b: Byte, c: Int): Byte = (Integer.rotateRight(b, c) >> 24).toByte
   

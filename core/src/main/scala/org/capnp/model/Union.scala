@@ -10,17 +10,10 @@ trait UnionObject[T <: Union] {
   def apply(tag: Int): T = cases(tag)()
 }
 
-trait AnonUnionObject[T <: Struct with Union] extends UnionObject[T] with StructObject[T] {
+abstract class AnonUnionObject[T <: Struct with Union] extends StructBuildable[T] {
+  protected def cases: Map[Int, StructObject[_ <: T]]
   protected def unionTagBitOffset: Long
   
-  def apply(): T = ???
-  
-  override def apply(msg: Option[Message], ptr: StructPtr): T = {
-    val s = apply(ptr.buf.readUInt16(64L + ptr.startWord * 64L + unionTagBitOffset))
-    s.buf = Some(ptr.buf.slice(64L + ptr.startWord * 64L))
-    s.dataBytes = ptr.dataWords * 8
-    s.pointerWords = ptr.ptrWords
-    s.msg = msg
-    s
-  }
+  override def apply(ptr: StructPtr): T =
+    cases(ptr.buf.readUInt16(64L + ptr.startWord * 64L + unionTagBitOffset))(ptr)
 } 

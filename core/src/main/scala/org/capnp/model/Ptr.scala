@@ -1,79 +1,84 @@
 package org.capnp.model
 
 sealed trait Ptr {
+  val msg: Message
   val buf: ByteBuf
 }
 
 object Ptr {
-  def apply(buf: ByteBuf): Ptr = buf.readFirstUInt2(0) match {
-    case 0 => StructPtr(buf) match {
-      case StructPtr(_, 0, 0, 0) => NullPtr(buf)
+  def apply(msg: Message, buf: ByteBuf): Ptr = buf.readFirstUInt2(0) match {
+    case 0 => StructPtr(msg, buf) match {
+      case StructPtr(_, _, 0, 0, 0) => NullPtr(msg, buf)
       case s => s
     }
-    case 1 => ListPtr(buf)
-    case 2 => FarPtr(buf)
+    case 1 => ListPtr(msg, buf)
+    case 2 => FarPtr(msg, buf)
   }
 }
 
-case class NullPtr(buf: ByteBuf) extends Ptr
+case class NullPtr(msg: Message, buf: ByteBuf) extends Ptr
 
-case class StructPtr(buf: ByteBuf, startWord: Int, dataWords: Int, ptrWords: Int) extends Ptr
+case class StructPtr(msg: Message, buf: ByteBuf, startWord: Int, dataWords: Int, ptrWords: Int)
+    extends Ptr
 
 object StructPtr {
-  def apply(buf: ByteBuf): StructPtr = StructPtr(
+  def apply(msg: Message, buf: ByteBuf): StructPtr = StructPtr(
+    msg,
     buf,
     buf.readLastInt30(0),
     buf.readUInt16(32),
-    buf.readUInt16(48)
-  )
+    buf.readUInt16(48))
 }
 
 sealed trait ListPtr extends Ptr
 
 object ListPtr {
-  def apply(buf: ByteBuf): ListPtr = buf.readFirstUInt3(32) match {
-    case 7 => CompListPtr(buf)
-    case t => PrimListPtr(t, buf)
+  def apply(msg: Message, buf: ByteBuf): ListPtr = buf.readFirstUInt3(32) match {
+    case 7 => CompListPtr(msg, buf)
+    case t => PrimListPtr(msg, t, buf)
   }
 }
 
-case class PrimListPtr(buf: ByteBuf, startWord: Int, elemSizeType: Byte, count: Int) extends ListPtr
+case class PrimListPtr(msg: Message, buf: ByteBuf, startWord: Int, elemSizeType: Byte, count: Int)
+    extends ListPtr
 
 object PrimListPtr {
-  def apply(buf: ByteBuf): PrimListPtr = apply(buf.readFirstUInt3(32), buf)
+  def apply(msg: Message, buf: ByteBuf): PrimListPtr = apply(msg, buf.readFirstUInt3(32), buf)
 
-  def apply(elemType: Byte, buf: ByteBuf): PrimListPtr = PrimListPtr(
+  def apply(msg: Message, elemType: Byte, buf: ByteBuf): PrimListPtr = PrimListPtr(
+    msg,
     buf,
     buf.readLastInt30(0),
     elemType,
-    buf.readLastUInt29(32).toInt
-  )
+    buf.readLastUInt29(32).toInt)
 }
 
-case class CompListPtr(buf: ByteBuf, startWord: Int, words: Long, tag: StructPtr) extends ListPtr
+case class CompListPtr(msg: Message, buf: ByteBuf, startWord: Int, words: Long, tag: StructPtr)
+    extends ListPtr
 
 object CompListPtr {
-  def apply(buf: ByteBuf): CompListPtr = {
+  def apply(msg: Message, buf: ByteBuf): CompListPtr = {
     val startWord = buf.readLastInt30(0)
     CompListPtr(
+      msg,
       buf,
       startWord + 1,
       buf.readLastUInt29(32),
       // TODO: Can this be a far ptr that needs to be resolved?
-      StructPtr(buf.slice(64 + startWord * 64L))
-    )
+      StructPtr(msg, buf.slice(64 + startWord * 64L)))
   }
 }
 
-case class FarPtr(buf: ByteBuf, twoWordLanding: Boolean, segOffsetWords: Long, segId: Int) extends Ptr
+case class FarPtr(msg: Message, buf: ByteBuf, twoWordLanding: Boolean, segOffsetWords: Long, segId: Int)
+    extends Ptr
 
 object FarPtr {
-  def apply(buf: ByteBuf): FarPtr = {
+  def apply(msg: Message, buf: ByteBuf): FarPtr = {
     FarPtr(
+      msg,
       buf,
       buf.readBool(2),
       buf.readLastUInt29(0),
-      buf.readUInt32(32).toInt
-    )
+      buf.readUInt32(32).toInt)
   }
 }

@@ -1,12 +1,8 @@
 package org.capnp.model.addressbook
 
-import org.capnp.model.Group
-import org.capnp.model.Struct
-import org.capnp.model.StructObject
-import org.capnp.model.Union
-import org.capnp.model.UnionObject
+import org.capnp.model._
 
-case class Person() extends Struct(0x98808e9832e8bc18L, 8, 4) {
+case class Person(ptr: StructPtr) extends Struct {
   def id = uint32Field(0)
   def id_=(v: Long) = uint32Field_=(0, v)
   
@@ -56,8 +52,8 @@ case class Person() extends Struct(0x98808e9832e8bc18L, 8, 4) {
   }
 }
 
-object Person extends StructObject[Person] {
-  case class PhoneNumber() extends Struct(0x814e90b29c9e8ad0L, 8, 1) {
+object Person extends StructObject[Person](8, 4) {
+  case class PhoneNumber(ptr: StructPtr) extends Struct {
     def number = textField(0)
     def number_=(v: String) = textField_=(0, v)
     
@@ -65,7 +61,7 @@ object Person extends StructObject[Person] {
     def type_=(v: PhoneNumber.Type.Value) = enumField_=(0, v)
   }
 
-  object PhoneNumber extends StructObject[PhoneNumber] {
+  object PhoneNumber extends StructObject[PhoneNumber](8, 1) {
     object Type extends Enumeration {
       val mobile = Value(0)
       val home = Value(1)

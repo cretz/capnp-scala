@@ -3,7 +3,7 @@ package org.capnp.gen.schema
 import org.capnp.model
 import org.capnp.model._
 
-sealed abstract class Node extends Struct(0xe682ab4cf923a417L, 40, 5) with Union {
+sealed abstract class Node extends Struct with Union {
   def id = uint64Field(0)
   def id_=(v: BigInt) = uint64Field_=(0, v)
   
@@ -33,11 +33,13 @@ object Node extends AnonUnionObject[Node] {
     5 -> Annotation
   )
   
-  case class File() extends Node {
+  case class File(ptr: StructPtr) extends Node {
     protected val unionTag = 0
   }
   
-  case class Struct() extends Node with Group {
+  object File extends StructObject[File](40, 5)
+  
+  case class Struct(ptr: StructPtr) extends Node with Group {
     protected val unionTag = 1
 
     def dataWordCount = uint16Field(112)
@@ -62,21 +64,27 @@ object Node extends AnonUnionObject[Node] {
     def fields_=(v: Seq[Field]) = structSeq_=(3, v)
   }
   
-  case class Enum() extends Node with Group {
+  object Struct extends StructObject[Struct](40, 5)
+  
+  case class Enum(ptr: StructPtr) extends Node with Group {
     protected val unionTag = 2
     
     def enumerants = structSeq[Enumerant](3, Enumerant)
     def enumerants_=(v: Seq[Enumerant]) = structSeq_=(3, v)
   }
   
-  case class Interface() extends Node with Group {
+  object Enum extends StructObject[Enum](40, 5)
+  
+  case class Interface(ptr: StructPtr) extends Node with Group {
     protected val unionTag = 3
     
     def methods = structSeq[Method](3, Method)
     def methods_=(v: Seq[Method]) = structSeq_=(3, v)
   }
   
-  case class Const() extends Node with Group {
+  object Interface extends StructObject[Interface](40, 5)
+  
+  case class Const(ptr: StructPtr) extends Node with Group {
     protected val unionTag = 4
     
     def `type` = structField[Type](3, Type)
@@ -86,7 +94,9 @@ object Node extends AnonUnionObject[Node] {
     def value_=(v: Option[Type]) = structField_=(4, v)
   }
   
-  case class Annotation() extends Node with Group {
+  object Const extends StructObject[Const](40, 5)
+  
+  case class Annotation(ptr: StructPtr) extends Node with Group {
     protected val unionTag = 5
     
     def `type` = structField[Type](3, Type)
@@ -129,7 +139,9 @@ object Node extends AnonUnionObject[Node] {
     def targetsAnnotation_=(v: Boolean) = boolField_=(123, v)   
   }
   
-  case class NestedNode() extends model.Struct(0x9aad50a41f4af45fL, 8, 1) {
+  object Annotation extends StructObject[Annotation](40, 5)
+  
+  case class NestedNode(ptr: StructPtr) extends model.Struct {
     def name = textField(0)
     def name_=(v: String) = textField_=(0, v)
     
@@ -137,5 +149,5 @@ object Node extends AnonUnionObject[Node] {
     def id_=(v: BigInt) = uint64Field_=(0, v)
   }
   
-  object NestedNode extends StructObject[NestedNode]
+  object NestedNode extends StructObject[NestedNode](8, 1)
 }

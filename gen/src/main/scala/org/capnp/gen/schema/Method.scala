@@ -2,7 +2,7 @@ package org.capnp.gen.schema
 
 import org.capnp.model._
 
-case class Method() extends Struct(0x9500cce23b334d80L, 8, 4) {
+case class Method(ptr: StructPtr) extends Struct {
   def name = textField(0)
   def name_=(v: String) = textField_=(0, v)
   
@@ -22,8 +22,8 @@ case class Method() extends Struct(0x9500cce23b334d80L, 8, 4) {
   def annotations_=(v: Seq[Annotation]) = structSeq_=(3, v)
 }
 
-object Method extends StructObject[Method] {
-  case class Param() extends Struct(0xcbc0c86dae91fcf6L, 0, 4) {
+object Method extends StructObject[Method](8, 4) {
+  case class Param(ptr: StructPtr) extends Struct {
     def name = textField(0)
     def name_=(v: String) = textField_=(0, v)
     
@@ -37,5 +37,5 @@ object Method extends StructObject[Method] {
     def annotations_=(v: Seq[Annotation]) = structSeq_=(3, v)
   }
 
-  object Param extends StructObject[Param]
+  object Param extends StructObject[Param](0, 4)
 }

@@ -2,7 +2,7 @@ package org.capnp.gen.schema
 
 import org.capnp.model._
 
-case class CodeGeneratorRequest() extends Struct(0xd07378ede1f9cc60L, 0, 2) {
+case class CodeGeneratorRequest(ptr: StructPtr) extends Struct {
   def nodes = structSeq[Node](0, Node)
   def nodes_=(v: Seq[Node]) = structSeq_=(0, v)
   
@@ -10,8 +10,8 @@ case class CodeGeneratorRequest() extends Struct(0xd07378ede1f9cc60L, 0, 2) {
   def requestedFiles_=(v: Seq[CodeGeneratorRequest.RequestedFile]) = structSeq_=(1, v)
 }
 
-object CodeGeneratorRequest extends StructObject[CodeGeneratorRequest] {
-  case class RequestedFile() extends Struct(0xcfea0eb02e810062L, 8, 2) {
+object CodeGeneratorRequest extends StructObject[CodeGeneratorRequest](0, 2) {
+  case class RequestedFile(ptr: StructPtr) extends Struct {
     def id = uint64Field(0)
     def id_=(v: BigInt) = uint64Field_=(0, v)
     
@@ -22,8 +22,8 @@ object CodeGeneratorRequest extends StructObject[CodeGeneratorRequest] {
     def imports_=(v: Seq[RequestedFile.Import]) = structSeq_=(1, v)
   }
 
-  object RequestedFile extends StructObject[CodeGeneratorRequest.RequestedFile] {
-    case class Import() extends Struct(0xae504193122357e5L, 8, 1) {
+  object RequestedFile extends StructObject[CodeGeneratorRequest.RequestedFile](8, 2) {
+    case class Import(ptr: StructPtr) extends Struct {
       def id = uint64Field(0)
       def id_=(v: BigInt) = uint64Field_=(0, v)
       
@@ -31,6 +31,6 @@ object CodeGeneratorRequest extends StructObject[CodeGeneratorRequest] {
       def name_=(v: String) = textField_=(0, v)
     }
   
-    object Import extends StructObject[Import]
+    object Import extends StructObject[Import](8, 1)
   }
 }

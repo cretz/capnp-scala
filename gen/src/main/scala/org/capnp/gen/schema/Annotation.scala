@@ -2,7 +2,7 @@ package org.capnp.gen.schema
 
 import org.capnp.model._
 
-case class Annotation() extends Struct(0xf1c8950dab257542L, 8, 1) {
+case class Annotation(ptr: StructPtr) extends Struct {
   def id = uint64Field(0)
   def id_=(v: BigInt) = uint64Field_=(0, v)
   
@@ -10,4 +10,4 @@ case class Annotation() extends Struct(0xf1c8950dab257542L, 8, 1) {
   def value_=(v: Option[Value]) = structField_=(0, v)
 }
 
-object Annotation extends StructObject[Annotation]
+object Annotation extends StructObject[Annotation](8, 1)

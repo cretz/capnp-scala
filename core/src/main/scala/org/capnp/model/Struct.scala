@@ -1,31 +1,18 @@
 package org.capnp.model
 
-abstract class Struct(id: BigInt, var dataBytes: Int, var pointerWords: Int) extends Pointable {
+abstract class Struct extends Pointable {
   
-  private var _buf: Option[ByteBuf] = None
-  private[model] var msg: Option[Message] = None
-  private var pointables = Map.empty[Int, Option[Pointable]]
+  val ptr: StructPtr
   
-  private[model] def buf: ByteBuf = _buf.getOrElse {
-    val b = new ByteBuf(dataBytes * 8L + pointerWords * 64L)
-    _buf = Some(b)
-    b
-  }
-
-  private[model] def buf_=(v: Option[ByteBuf]) { _buf = v }
+  private val buf = ptr.buf.slice(64L + ptr.startWord * 64L)
   
   private def ptrBuf(idx: Int): ByteBuf =
-    buf.slice(idx * 64L + dataBytes * 8L)
+    buf.slice(idx * 64L + ptr.dataWords * 64L)
   
-  private def primSeq[T](ptr: Int, elemType: Type.Value): Seq[T] =
-    pointables.getOrElse(ptr, {
-      val s = msg.map(_.getPrimSeq(ptrBuf(ptr), elemType))
-      pointables += ptr -> s
-      Some(s.getOrElse(Seq.empty[T]))
-    }).get.asInstanceOf[Seq[T]]
+  private def primSeq[T](ptrOff: Int, elemType: Type.Value): Seq[T] =
+    ptr.msg.getPrimSeq(ptrBuf(ptrOff), elemType)
   
-  private def primSeq_=[T](ptr: Int, elemType: Type.Value, v: Seq[T]): Unit =
-    pointables += ptr -> Some(PointableSeq.fromSeq(v))
+  private def primSeq_=[T](ptr: Int, elemType: Type.Value, v: Seq[T]): Unit = ???
   
   protected def boolField(offset: Long): Boolean = buf.readBool(offset)
   
@@ -115,15 +102,10 @@ abstract class Struct(id: BigInt, var dataBytes: Int, var pointerWords: Int) ext
   
   protected def float64Seq_=(ptr: Int, v: Seq[Double]) { primSeq_=(ptr, Type.Float64, v) }
   
-  protected def structField[T <: Struct](ptr: Int, obj: StructObject[T]): Option[T] =
-    pointables.getOrElse(ptr, {
-      val s = msg.flatMap(_.getStruct(ptrBuf(ptr), obj))
-      pointables += ptr -> s
-      s
-    }).asInstanceOf[Option[T]]
+  protected def structField[T <: Struct](ptrOff: Int, bld: StructBuildable[T]): Option[T] =
+    ptr.msg.getStruct(ptrBuf(ptrOff), bld)
   
-  protected def structField_=[T <: Struct](ptr: Int, v: Option[T]): Unit =
-    pointables += ptr -> v
+  protected def structField_=[T <: Struct](ptr: Int, v: Option[T]): Unit = ???
   
   protected def groupField[T <: Group](): T = ???
   
@@ -134,27 +116,19 @@ abstract class Struct(id: BigInt, var dataBytes: Int, var pointerWords: Int) ext
 
   protected def unionField_=[T <: Union](tagOffset: Long, v: T): Unit = ???
   
-  protected def textField(ptr: Int): String =
-    pointables.getOrElse(ptr, {
-      val bytes = int8Seq(ptr)
-      require(bytes.isEmpty || bytes.last == 0, "Last byte in string is not 0")
-      val t = Some(TextPointable(new String(bytes.dropRight(1).toArray, "UTF-8")))
-      pointables += ptr -> t
-      t
-    }).get.asInstanceOf[TextPointable].str
+  protected def textField(ptr: Int): String = {
+    val bytes = int8Seq(ptr)
+    if (bytes.isEmpty) ""
+    else if (bytes.last != 0) throw new IllegalArgumentException("Last byte is not 0")
+    else new String(bytes.dropRight(1).toArray, "UTF-8")
+  }
 
-  protected def textField_=(ptr: Int, v: String): Unit =
-    pointables += ptr -> Some(TextPointable(v))
+  protected def textField_=(ptr: Int, v: String): Unit = ???
   
-  protected def structSeq[T <: Struct](ptr: Int, obj: StructObject[T]): Seq[T] =
-    pointables.getOrElse(ptr, {
-      val s = msg.map(_.getCompSeq(ptrBuf(ptr), obj))
-      pointables += ptr -> s
-      Some(s.getOrElse(Seq.empty[T]))
-    }).get.asInstanceOf[Seq[T]]
+  protected def structSeq[T <: Struct](ptrOff: Int, bld: StructBuildable[T]): Seq[T] =
+    ptr.msg.getCompSeq(ptrBuf(ptrOff), bld)
     
-  protected def structSeq_=[T <: Struct](ptr: Int, v: Seq[T]): Unit =
-    pointables += ptr -> Some(PointableSeq.fromSeq(v))
+  protected def structSeq_=[T <: Struct](ptr: Int, v: Seq[T]): Unit = ???
   
   protected def dataField(ptr: Int): Seq[Byte] = int8Seq(ptr)
   
@@ -171,26 +145,15 @@ abstract class Struct(id: BigInt, var dataBytes: Int, var pointerWords: Int) ext
 
   protected def unionField_=[T <: Union](offset: Int, obj: T): Unit = ???
   
-  protected def dynField(ptr: Int): Option[DynObject] =
-    pointables.getOrElse(ptr, {
-      val s = msg.flatMap(_.getDynObject(ptrBuf(ptr)))
-      pointables += ptr -> s
-      s
-    }).asInstanceOf[Option[DynObject]]
+  protected def dynField(ptrOff: Int): Option[DynObject] =
+    ptr.msg.getDynObject(ptrBuf(ptrOff))
 
-  protected def dynField_=(ptr: Int, v: Option[DynObject]): Unit =
-    pointables += ptr -> v
+  protected def dynField_=(ptr: Int, v: Option[DynObject]): Unit = ???
 }
 
-trait StructObject[T <: Struct] {
-  def apply(): T
-
-  def apply(msg: Option[Message], ptr: StructPtr): T = {
-    val s = apply()
-    s.buf = Some(ptr.buf.slice(64L + ptr.startWord * 64L))
-    s.dataBytes = ptr.dataWords * 8
-    s.pointerWords = ptr.ptrWords
-    s.msg = msg
-    s
-  }
+abstract class StructBuildable[T <: Struct] {
+  def apply(ptr: StructPtr): T
 }
+
+abstract class StructObject[T <: Struct](val dataBytes: Int, val pointerWords: Int)
+    extends StructBuildable[T]

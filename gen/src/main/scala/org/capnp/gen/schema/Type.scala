@@ -2,7 +2,7 @@ package org.capnp.gen.schema
 
 import org.capnp.model._
 
-sealed abstract class Type extends Struct(0xd07378ede1f9cc60L, 16, 1) with Union
+sealed abstract class Type extends Struct with Union
 
 object Type extends AnonUnionObject[Type] {
   protected val unionTagBitOffset = 0L
@@ -28,91 +28,129 @@ object Type extends AnonUnionObject[Type] {
     18 -> Object
   )
   
-  case class Void() extends Type {
+  case class Void(ptr: StructPtr) extends Type {
     protected val unionTag = 0
   }
   
-  case class Bool() extends Type {
+  object Void extends StructObject[Void](16, 1)
+  
+  case class Bool(ptr: StructPtr) extends Type {
     protected val unionTag = 1
   }
   
-  case class Int8() extends Type {
+  object Bool extends StructObject[Bool](16, 1)
+  
+  case class Int8(ptr: StructPtr) extends Type {
     protected val unionTag = 2
   }
   
-  case class Int16() extends Type {
+  object Int8 extends StructObject[Int8](16, 1)
+  
+  case class Int16(ptr: StructPtr) extends Type {
     protected val unionTag = 3
   }
   
-  case class Int32() extends Type {
+  object Int16 extends StructObject[Int16](16, 1)
+  
+  case class Int32(ptr: StructPtr) extends Type {
     protected val unionTag = 4
   }
   
-  case class Int64() extends Type {
+  object Int32 extends StructObject[Int32](16, 1)
+  
+  case class Int64(ptr: StructPtr) extends Type {
     protected val unionTag = 5
   }
   
-  case class UInt8() extends Type {
+  object Int64 extends StructObject[Int64](16, 1)
+  
+  case class UInt8(ptr: StructPtr) extends Type {
     protected val unionTag = 6
   }
   
-  case class UInt16() extends Type {
+  object UInt8 extends StructObject[UInt8](16, 1)
+  
+  case class UInt16(ptr: StructPtr) extends Type {
     protected val unionTag = 7
   }
   
-  case class UInt32() extends Type {
+  object UInt16 extends StructObject[UInt16](16, 1)
+  
+  case class UInt32(ptr: StructPtr) extends Type {
     protected val unionTag = 8
   }
   
-  case class UInt64() extends Type {
+  object UInt32 extends StructObject[UInt32](16, 1)
+  
+  case class UInt64(ptr: StructPtr) extends Type {
     protected val unionTag = 9
   }
   
-  case class Float32() extends Type {
+  object UInt64 extends StructObject[UInt64](16, 1)
+  
+  case class Float32(ptr: StructPtr) extends Type {
     protected val unionTag = 10
   }
   
-  case class Float64() extends Type {
+  object Float32 extends StructObject[Float32](16, 1)
+  
+  case class Float64(ptr: StructPtr) extends Type {
     protected val unionTag = 11
   }
   
-  case class Text() extends Type {
+  object Float64 extends StructObject[Float64](16, 1)
+  
+  case class Text(ptr: StructPtr) extends Type {
     protected val unionTag = 12
   }
   
-  case class Data() extends Type {
+  object Text extends StructObject[Text](16, 1)
+  
+  case class Data(ptr: StructPtr) extends Type {
     protected val unionTag = 13
   }
   
-  case class List() extends Type with Group {
+  object Data extends StructObject[Data](16, 1)
+  
+  case class List(ptr: StructPtr) extends Type with Group {
     protected val unionTag = 14
     
     def elementType = structField[Type](0, Type)
     def elementType_=(v: Option[Type]) = structField_=(0, v)
   }
   
-  case class Enum() extends Type with Group {
+  object List extends StructObject[List](16, 1)
+  
+  case class Enum(ptr: StructPtr) extends Type with Group {
     protected val unionTag = 15
     
     def typeId = uint64Field(64)
     def typeId_=(v: BigInt) = uint64Field_=(64, v)
   }
   
-  case class Struct() extends Type with Group {
+  object Enum extends StructObject[Enum](16, 1)
+  
+  case class Struct(ptr: StructPtr) extends Type with Group {
     protected val unionTag = 16
     
     def typeId = uint64Field(64)
     def typeId_=(v: BigInt) = uint64Field_=(64, v)
   }
   
-  case class Interface() extends Type with Group {
+  object Struct extends StructObject[Struct](16, 1)
+  
+  case class Interface(ptr: StructPtr) extends Type with Group {
     protected val unionTag = 17
     
     def typeId = uint64Field(64)
     def typeId_=(v: BigInt) = uint64Field_=(64, v)
   }
   
-  case class Object() extends Type {
+  object Interface extends StructObject[Interface](16, 1)
+  
+  case class Object(ptr: StructPtr) extends Type {
     protected val unionTag = 18
   }
+  
+  object Object extends StructObject[Object](16, 1)
 }

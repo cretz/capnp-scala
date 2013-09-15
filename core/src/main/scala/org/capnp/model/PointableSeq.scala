@@ -82,14 +82,15 @@ class CompositeSeq[T <: Struct] private[model] (
     buf: ByteBuf,
     count: Int,
     dataWords: Int,
-    ptrWords: Int, obj: StructObject[T])
+    ptrWords: Int,
+    bld: StructBuildable[T])
     extends PointableSeq[T] {
   val stepWords = dataWords + ptrWords
  
   def apply(idx: Int): T = {
     if (idx < 0 || count <= idx) throw new IndexOutOfBoundsException
     // Have to have -1 start word, because it doesn't really have a pointer
-    obj(Some(msg), StructPtr(buf.slice(idx * (stepWords * 64L)), -1, dataWords, ptrWords))
+    bld(StructPtr(msg, buf.slice(idx * (stepWords * 64L)), -1, dataWords, ptrWords))
   }
  
   def length: Int = count

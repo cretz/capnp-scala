@@ -3,7 +3,7 @@ package org.capnp.gen.schema
 import org.capnp.model
 import org.capnp.model._
 
-sealed abstract class Field extends Struct(0x9aad50a41f4af45fL, 24, 4) with Union {
+sealed abstract class Field extends Struct with Union {
   def name = textField(0)
   def name_=(v: String) = textField_=(0, v)
   
@@ -47,7 +47,7 @@ object Field extends AnonUnionObject[Field] {
     1 -> Group
   )
   
-  case class Slot() extends Field with model.Group {
+  case class Slot(ptr: StructPtr) extends Field with model.Group {
     protected val unionTag = 0
   
     def offset = uint32Field(32)
@@ -60,10 +60,14 @@ object Field extends AnonUnionObject[Field] {
     def value_=(v: Option[Value]) = structField_=(3, v)
   }
   
-  case class Group() extends Field with model.Group {
+  object Slot extends StructObject[Slot](24, 4)
+  
+  case class Group(ptr: StructPtr) extends Field with model.Group {
     protected val unionTag = 1
     
     def typeId = uint64Field(128)
     def typeId_=(v: BigInt) = uint64Field_=(128, v)
   }
+  
+  object Group extends StructObject[Group](24, 4)
 }

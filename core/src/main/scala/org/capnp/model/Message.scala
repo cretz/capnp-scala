@@ -5,10 +5,10 @@ import java.nio.ByteBuffer
 
 // TODO: build streamable
 case class Message(segments: Seq[ByteBuf]) {
-  def root[T <: Struct](obj: StructObject[T]): Option[T] = getStruct(segments.head, obj)
+  def root[T <: Struct](bld: StructBuildable[T]): Option[T] = getStruct(segments.head, bld)
   
   // This follows far pointers
-  def getPtr(ptrBuf: ByteBuf): Ptr = Ptr(ptrBuf) match {
+  def getPtr(ptrBuf: ByteBuf): Ptr = Ptr(this, ptrBuf) match {
     case p: FarPtr => getPtr(segments(p.segId).slice(p.segOffsetWords * 64L))
     case p => p
   }
@@ -18,8 +18,8 @@ case class Message(segments: Seq[ByteBuf]) {
     case p => Some(DynObject(p))
   }
 
-  def getStruct[T <: Struct](ptrBuf: ByteBuf, obj: StructObject[T]): Option[T] = getPtr(ptrBuf) match {
-    case p: StructPtr => Some(obj(Some(this), p))
+  def getStruct[T <: Struct](ptrBuf: ByteBuf, bld: StructBuildable[T]): Option[T] = getPtr(ptrBuf) match {
+    case p: StructPtr => Some(bld(p))
     case _: NullPtr => None
     case _ => throw new Exception("Invalid struct pointer")
   }
@@ -37,7 +37,7 @@ case class Message(segments: Seq[ByteBuf]) {
     case _ => throw new Exception("Invalid list pointer")
   }
   
-  def getCompSeq[T <: Struct](ptrBuf: ByteBuf, obj: StructObject[T]): PointableSeq[T] = getPtr(ptrBuf) match {
+  def getCompSeq[T <: Struct](ptrBuf: ByteBuf, bld: StructBuildable[T]): PointableSeq[T] = getPtr(ptrBuf) match {
     case p: CompListPtr =>
       new CompositeSeq[T](
         this,
@@ -45,7 +45,7 @@ case class Message(segments: Seq[ByteBuf]) {
         p.tag.startWord,
         p.tag.dataWords,
         p.tag.ptrWords,
-        obj
+        bld
       )
     case _: NullPtr => PointableSeq.empty[T]
     case _ => throw new Exception("Invalid list pointer")

@@ -2,7 +2,7 @@ package org.capnp.gen.schema
 
 import org.capnp.model._
 
-case class Enumerant() extends Struct(0x978a7cebdc549a4dL, 8, 2) {
+case class Enumerant(ptr: StructPtr) extends Struct {
   def name = textField(0)
   def name_=(v: String) = textField_=(0, v)
   
@@ -13,4 +13,4 @@ case class Enumerant() extends Struct(0x978a7cebdc549a4dL, 8, 2) {
   def annotations_=(v: Seq[Annotation]) = structSeq_=(1, v)
 }
 
-object Enumerant extends StructObject[Enumerant]
+object Enumerant extends StructObject[Enumerant](8, 2)

@@ -1,9 +1,9 @@
 package org.capnp.model
 
-import scala.collection.IndexedSeq
-import scala.collection.IndexedSeqLike
+import scala.collection.mutable.Seq
+import scala.collection.mutable.IndexedSeq
+import scala.collection.mutable.IndexedSeqLike
 import scala.collection.generic.CanBuildFrom
-import scala.collection.immutable.VectorBuilder
 import scala.collection.mutable.Builder
 
 abstract class PointableSeq[T]
@@ -14,26 +14,17 @@ abstract class PointableSeq[T]
 }
 
 object PointableSeq {
-  def apply[T](vals: T*): PointableSeq[T] = fromSeq(vals)
-  
-  def empty[T]: PointableSeq[T] = apply[T]()
- 
-  def fromSeq[T](seq: Seq[T]): PointableSeq[T] = new LiteralPointableSeq[T](seq)
+  def apply[T](vals: T*): PointableSeq[T] =
+    throw new NotImplementedError("Cannot construct a capnp seq")
  
   def newBuilder[T]: Builder[T, PointableSeq[T]] =
-    new VectorBuilder mapResult fromSeq
+    throw new NotImplementedError("Cannot build to a capnp seq")
  
   implicit def canBuildFrom[T <: Struct, From]: CanBuildFrom[PointableSeq[_], T, PointableSeq[T]] =
     new CanBuildFrom[PointableSeq[_], T, PointableSeq[T]] {
       def apply(): Builder[T, PointableSeq[T]] = newBuilder
       def apply(from: PointableSeq[_]): Builder[T, PointableSeq[T]] = newBuilder
   }
-}
-
-class LiteralPointableSeq[T] private[model] (vals: Seq[T]) extends PointableSeq[T] {
-  def apply(idx: Int): T = vals(idx)
- 
-  def length: Int = vals.length
 }
 
 class PrimitiveSeq[T] private[model] (
@@ -75,6 +66,8 @@ class PrimitiveSeq[T] private[model] (
   }
  
   def length: Int = count
+  
+  def update(idx: Int, elem: T): Unit = ???
 }
 
 class CompositeSeq[T <: Struct] private[model] (
@@ -94,4 +87,6 @@ class CompositeSeq[T <: Struct] private[model] (
   }
  
   def length: Int = count
+  
+  def update(idx: Int, elem: T): Unit = ???
 }

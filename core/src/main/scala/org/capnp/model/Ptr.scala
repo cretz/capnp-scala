@@ -19,7 +19,14 @@ object Ptr {
 case class NullPtr(msg: Message, buf: ByteBuf) extends Ptr
 
 case class StructPtr(msg: Message, buf: ByteBuf, startWord: Int, dataWords: Int, ptrWords: Int)
-    extends Ptr
+    extends Ptr {
+  def write() {
+    buf.writeFirstUInt2(0, 0).
+      writeLastInt30(0, startWord).
+      writeUInt16(32, dataWords).
+      writeUInt16(48, ptrWords)
+  }
+}
 
 object StructPtr {
   def apply(msg: Message, buf: ByteBuf): StructPtr = StructPtr(
@@ -40,7 +47,14 @@ object ListPtr {
 }
 
 case class PrimListPtr(msg: Message, buf: ByteBuf, startWord: Int, elemSizeType: Byte, count: Int)
-    extends ListPtr
+    extends ListPtr {
+  def write() {
+    buf.writeFirstUInt2(0, 0).
+      writeLastInt30(0, startWord).
+      writeFirstUInt3(32, elemSizeType).
+      writeUInt16(48, count)
+  }
+}
 
 object PrimListPtr {
   def apply(msg: Message, buf: ByteBuf): PrimListPtr = apply(msg, buf.readFirstUInt3(32), buf)
@@ -54,7 +68,15 @@ object PrimListPtr {
 }
 
 case class CompListPtr(msg: Message, buf: ByteBuf, startWord: Int, words: Long, tag: StructPtr)
-    extends ListPtr
+    extends ListPtr {
+  // Does not write the tag
+  def write() {
+    buf.writeFirstUInt2(0, 0).
+      writeLastInt30(0, startWord - 1).
+      writeFirstUInt3(32, 7).
+      writeLastUInt29(32, words)
+  }
+}
 
 object CompListPtr {
   def apply(msg: Message, buf: ByteBuf): CompListPtr = {

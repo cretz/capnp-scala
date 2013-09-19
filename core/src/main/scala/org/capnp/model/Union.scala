@@ -1,7 +1,7 @@
 package org.capnp.model
 
 trait Union {
-  protected def unionTag: Int
+  def unionTag: Int
 }
 
 trait UnionObject[T <: Union] {

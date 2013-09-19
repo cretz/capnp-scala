@@ -8,7 +8,7 @@ import java.nio.ByteBuffer
 @RunWith(classOf[JUnitRunner])
 class ByteBufSpec extends Specification {
   "ByteBuf" should {
-    def withBuf[T](f: (ByteBuf) => T): T = f(new ByteBuf(128 * 64L))
+    def withBuf[T](f: (ByteBuf) => T): T = f(new ByteBufImpl(128 * 64L))
 
     def checkReadWrite[T](v: T, w: (Long, T) => ByteBuf,
         r: (Long) => T, offset: Int = 16) = {
@@ -17,7 +17,7 @@ class ByteBufSpec extends Specification {
     }
     
     def binaryBuf(str: String): ByteBuf = {
-      val buf = new ByteBuf(ByteBuffer.allocate(str.length / 8 + 1))
+      val buf = new ByteBufImpl(ByteBuffer.allocate(str.length / 8 + 1))
       augmentString(str).zipWithIndex.map(c => buf.writeBool(c._2, c._1 == '1'))
       buf
     }

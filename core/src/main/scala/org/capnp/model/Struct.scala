@@ -130,7 +130,7 @@ abstract class Struct extends Pointable {
   protected def textFieldOption(ptr: Int): Option[String] = int8SeqOption(ptr) map { b =>
     if (b.isEmpty) ""
     else if (b.last != 0) throw new IllegalArgumentException("Last byte is not 0")
-    else new String(b.dropRight(1).toArray, "UTF8")
+    else new String(b.view.dropRight(1).toArray, "UTF8")
   }
 
   protected def textField_=(ptr: Int, v: String): Unit = int8SeqOption(ptr) match {

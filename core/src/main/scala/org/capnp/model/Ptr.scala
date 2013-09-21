@@ -3,6 +3,8 @@ package org.capnp.model
 sealed trait Ptr {
   val msg: Message
   val buf: ByteBuf
+  
+  def write(ptrBuf: ByteBuf): this.type
 }
 
 object Ptr {
@@ -16,15 +18,18 @@ object Ptr {
   }
 }
 
-case class NullPtr(msg: Message, buf: ByteBuf) extends Ptr
+case class NullPtr(msg: Message, buf: ByteBuf) extends Ptr {
+  def write(ptrBuf: ByteBuf): this.type = { ptrBuf.writeUInt64(0, 0); this }
+}
 
 case class StructPtr(msg: Message, buf: ByteBuf, startWord: Int, dataWords: Int, ptrWords: Int)
     extends Ptr {
-  def write() {
-    buf.writeFirstUInt2(0, 0).
+  def write(ptrBuf: ByteBuf): this.type = {
+    ptrBuf.writeFirstUInt2(0, 0).
       writeLastInt30(0, startWord).
       writeUInt16(32, dataWords).
       writeUInt16(48, ptrWords)
+    this
   }
 }
 
@@ -48,11 +53,12 @@ object ListPtr {
 
 case class PrimListPtr(msg: Message, buf: ByteBuf, startWord: Int, elemSizeType: Byte, count: Int)
     extends ListPtr {
-  def write() {
-    buf.writeFirstUInt2(0, 0).
+  def write(ptrBuf: ByteBuf): this.type = {
+    ptrBuf.writeFirstUInt2(0, 0).
       writeLastInt30(0, startWord).
       writeFirstUInt3(32, elemSizeType).
       writeUInt16(48, count)
+    this
   }
 }
 
@@ -70,11 +76,12 @@ object PrimListPtr {
 case class CompListPtr(msg: Message, buf: ByteBuf, startWord: Int, words: Long, tag: StructPtr)
     extends ListPtr {
   // Does not write the tag
-  def write() {
-    buf.writeFirstUInt2(0, 0).
+  def write(ptrBuf: ByteBuf): this.type = {
+    ptrBuf.writeFirstUInt2(0, 0).
       writeLastInt30(0, startWord - 1).
       writeFirstUInt3(32, 7).
       writeLastUInt29(32, words)
+    this
   }
 }
 
@@ -92,7 +99,15 @@ object CompListPtr {
 }
 
 case class FarPtr(msg: Message, buf: ByteBuf, twoWordLanding: Boolean, segOffsetWords: Long, segId: Int)
-    extends Ptr
+    extends Ptr {
+  def write(ptrBuf: ByteBuf): this.type = {
+    ptrBuf.writeFirstUInt2(0, 2).
+      writeBool(2, twoWordLanding).
+      writeLastUInt29(0, segOffsetWords).
+      writeUInt32(32, segId)
+    this
+  }
+}
 
 object FarPtr {
   def apply(msg: Message, buf: ByteBuf): FarPtr = {
